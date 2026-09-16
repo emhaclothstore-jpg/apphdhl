@@ -12,6 +12,8 @@ import {
   DoctorShiftDuty,
   parseSpecialDuties,
   formatSpecialDuties,
+  SpecialDutyOption,
+  DEFAULT_SPECIAL_DUTY_OPTIONS,
 } from '../types';
 import { INITIAL_MACHINES, SAMPLE_NURSES, LEGACY_SAMPLE_NURSE_NAMES, INITIAL_SETTINGS, INITIAL_DOCTORS, LEGACY_SAMPLE_DOCTOR_NAMES } from '../data/initialData';
 import { FairSchedulerEngine } from '../domain/FairSchedulerEngine';
@@ -162,6 +164,11 @@ export interface HemoContextType {
   setDoctorDuty: (date: string, pagiDoctorId?: number | null, siangDoctorId?: number | null, notes?: string) => void;
   getDoctorDutyForDate: (date: string) => DoctorShiftDuty | undefined;
   dispatchDoctorWhatsApp: (doctor: Doctor, shiftType: 'PAGI' | 'SIANG', dateStr?: string) => void;
+  specialDutyOptions: SpecialDutyOption[];
+  addSpecialDutyOption: (opt: Omit<SpecialDutyOption, 'id'>) => Promise<void>;
+  updateSpecialDutyOption: (id: string, updated: Partial<SpecialDutyOption>) => Promise<void>;
+  deleteSpecialDutyOption: (id: string) => Promise<void>;
+  resetSpecialDutyOptions: () => Promise<void>;
 }
 
 const HemoContext = createContext<HemoContextType | undefined>(undefined);
@@ -424,6 +431,21 @@ export const HemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('hemo_doctor_duties_v1', JSON.stringify(doctorDuties));
   }, [doctorDuties]);
 
+  const [specialDutyOptions, setSpecialDutyOptions] = useState<SpecialDutyOption[]>(() => {
+    const saved = localStorage.getItem('hemo_special_duty_options_v1');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    return DEFAULT_SPECIAL_DUTY_OPTIONS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hemo_special_duty_options_v1', JSON.stringify(specialDutyOptions));
+  }, [specialDutyOptions]);
+
   // Helper functions for cloud sync & data sanitization
   const sanitizeAssignmentForFirestore = (item: ShiftAssignment): ShiftAssignment => {
     return {
@@ -582,6 +604,7 @@ export const HemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let unsubBays = () => {};
     let unsubDoctors = () => {};
     let unsubDoctorDuties = () => {};
+    let unsubSpecialDuties = () => {};
 
     try {
       // 1. Listen to Nurses collection - user input is locked permanently, sample default nurses purged
@@ -998,6 +1021,23 @@ export const HemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.warn('Firestore doctor_duties listener error:', err);
         }
       );
+
+      // 8. Listen to Special Duty options in settings/special_duties
+      unsubSpecialDuties = onSnapshot(
+        doc(db, 'settings', 'special_duties'),
+        (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data() as { options?: SpecialDutyOption[] };
+            if (data.options && Array.isArray(data.options) && data.options.length > 0) {
+              setSpecialDutyOptions(data.options);
+              localStorage.setItem('hemo_special_duty_options_v1', JSON.stringify(data.options));
+            }
+          }
+        },
+        (err) => {
+          console.warn('Firestore special_duties listener error:', err);
+        }
+      );
     } catch (e) {
       console.warn('Firestore initialization error:', e);
     }
@@ -1010,6 +1050,7 @@ export const HemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubSettings();
       unsubDoctors();
       unsubDoctorDuties();
+      unsubSpecialDuties();
     };
   }, []);
 
@@ -3023,6 +3064,75 @@ export const HemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addSpecialDutyOption = async (opt: Omit<SpecialDutyOption, 'id'>) => {
+    const rawId = opt.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '_');
+    const id = rawId ? `DUTY_${rawId}` : `DUTY_${Date.now()}`;
+    const newOption: SpecialDutyOption = {
+      ...opt,
+      id,
+      isCustom: true,
+    };
+    const updated = [
+      ...specialDutyOptions.filter((o) => o.id !== id && o.code.toUpperCase() !== opt.code.toUpperCase()),
+      newOption,
+    ];
+    setSpecialDutyOptions(updated);
+    localStorage.setItem('hemo_special_duty_options_v1', JSON.stringify(updated));
+
+    try {
+      await setDoc(doc(db, 'settings', 'special_duties'), { options: updated }, { merge: true });
+      showToast(`Pilihan tugas khusus "${newOption.label}" berhasil ditambahkan ke sistem.`, 'success');
+    } catch (err) {
+      console.warn('Failed to save special duty to cloud:', err);
+      showToast(`Tugas khusus "${newOption.label}" disimpan lokal.`, 'info');
+    }
+  };
+
+  const updateSpecialDutyOption = async (id: string, updatedFields: Partial<SpecialDutyOption>) => {
+    const updated = specialDutyOptions.map((o) => (o.id === id ? { ...o, ...updatedFields } : o));
+    setSpecialDutyOptions(updated);
+    localStorage.setItem('hemo_special_duty_options_v1', JSON.stringify(updated));
+
+    try {
+      await setDoc(doc(db, 'settings', 'special_duties'), { options: updated }, { merge: true });
+      showToast('Pilihan tugas khusus berhasil diperbarui.', 'success');
+    } catch (err) {
+      console.warn('Failed to update special duty in cloud:', err);
+      showToast('Perubahan tugas khusus disimpan lokal.', 'info');
+    }
+  };
+
+  const deleteSpecialDutyOption = async (id: string) => {
+    const target = specialDutyOptions.find((o) => o.id === id);
+    const updated = specialDutyOptions.filter((o) => o.id !== id);
+    setSpecialDutyOptions(updated);
+    localStorage.setItem('hemo_special_duty_options_v1', JSON.stringify(updated));
+
+    try {
+      await setDoc(doc(db, 'settings', 'special_duties'), { options: updated }, { merge: true });
+      showToast(
+        `Pilihan tugas khusus ${target ? `"${target.label}"` : ''} berhasil dihapus dari sistem.`,
+        'success'
+      );
+    } catch (err) {
+      console.warn('Failed to delete special duty in cloud:', err);
+      showToast('Tugas khusus dihapus dari data lokal.', 'info');
+    }
+  };
+
+  const resetSpecialDutyOptions = async () => {
+    setSpecialDutyOptions(DEFAULT_SPECIAL_DUTY_OPTIONS);
+    localStorage.setItem('hemo_special_duty_options_v1', JSON.stringify(DEFAULT_SPECIAL_DUTY_OPTIONS));
+
+    try {
+      await setDoc(doc(db, 'settings', 'special_duties'), { options: DEFAULT_SPECIAL_DUTY_OPTIONS });
+      showToast('Pilihan tugas khusus berhasil dikembalikan ke standar awal sistem.', 'success');
+    } catch (err) {
+      console.warn('Failed to reset special duties in cloud:', err);
+      showToast('Standar tugas khusus dipulihkan secara lokal.', 'info');
+    }
+  };
+
   return (
     <HemoContext.Provider
       value={{
@@ -3104,6 +3214,11 @@ export const HemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setDoctorDuty,
         getDoctorDutyForDate,
         dispatchDoctorWhatsApp,
+        specialDutyOptions,
+        addSpecialDutyOption,
+        updateSpecialDutyOption,
+        deleteSpecialDutyOption,
+        resetSpecialDutyOptions,
       }}
     >
       {children}

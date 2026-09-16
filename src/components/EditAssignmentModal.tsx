@@ -8,6 +8,7 @@ import {
   parseSpecialDuties,
   formatSpecialDuties,
 } from '../types';
+import { getSpecialDutyDotStyle } from '../utils/specialDutyColors';
 import { X, Check, Crown, Tag, CheckCircle2, Zap, Sliders, Calendar, ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface EditAssignmentModalProps {
@@ -284,9 +285,15 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
                   <div className="flex items-center gap-2.5">
                     <Crown className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
                     <div>
-                      <span className="text-xs font-extrabold text-amber-900 dark:text-amber-300">
-                        Koordinator / PJ Sif (Katim)
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-extrabold text-amber-900 dark:text-amber-300">
+                          Koordinator / PJ Sif (Katim)
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" />
+                          Dot Hijau
+                        </span>
+                      </div>
                       <p className="text-[11px] text-amber-700 dark:text-amber-400">
                         Memimpin operan dan koordinasi pelayanan sif HD
                       </p>
@@ -397,18 +404,22 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                     {Object.entries(SPECIAL_DUTY_OPTIONS).map(([code, opt]) => {
                       const isSelected = selectedDuties.includes(code);
+                      const dot = getSpecialDutyDotStyle(code);
                       return (
                         <button
                           key={code}
                           type="button"
                           onClick={() => handleToggleDuty(code)}
-                          className={`p-2 rounded-xl border text-left text-[11px] transition-all flex items-center justify-between ${
+                          className={`p-2 rounded-xl border text-left text-[11px] transition-all flex items-center justify-between gap-1.5 ${
                             isSelected
                               ? `${opt.badgeClass} ring-1 ring-blue-500/40 font-bold shadow-2xs`
                               : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
                           }`}
                         >
-                          <span className="truncate">{opt.shortName}</span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dot.bgClass} ${dot.ringClass}`} />
+                            <span className="truncate">{opt.shortName}</span>
+                          </div>
                           {isSelected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-current" />}
                         </button>
                       );
@@ -418,13 +429,16 @@ export const EditAssignmentModal: React.FC<EditAssignmentModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsCustomDuty(!isCustomDuty)}
-                      className={`p-2 rounded-xl border text-left text-[11px] transition-all flex items-center justify-between ${
+                      className={`p-2 rounded-xl border text-left text-[11px] transition-all flex items-center justify-between gap-1.5 ${
                         isCustomDuty
                           ? 'bg-indigo-50 text-indigo-800 border-indigo-300 dark:bg-indigo-950/70 dark:text-indigo-300 dark:border-indigo-800 ring-1 ring-indigo-500/40 font-bold shadow-2xs'
                           : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
                       }`}
                     >
-                      <span className="truncate">Lainnya / Kustom</span>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-teal-500 ring-1 ring-white dark:ring-slate-900" />
+                        <span className="truncate">Lainnya / Kustom</span>
+                      </div>
                       {isCustomDuty && <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-current" />}
                     </button>
                   </div>

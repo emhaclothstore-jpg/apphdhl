@@ -611,6 +611,7 @@ export class GoogleSheetsService {
             machines: mCodes,
             machineCount: a.assignedMachineIds?.length || 0,
             notes: a.notes,
+            specialDuty: a.specialDuty || '',
           };
         }),
         doctors: (doctors || []).map((doc) => ({
@@ -1262,8 +1263,9 @@ function doGet(e) {
       }
     }
 
-    // Peta Alokasi Mesin dari Sheet Detail (jika ada)
+    // Peta Alokasi Mesin dan Tugas Khusus dari Sheet Detail (jika ada)
     var machineMap = {};
+    var dutyMap = {};
     var detailSheet = ss.getSheetByName("Jadwal HD (Detail Mesin)") || ss.getSheetByName("Jadwal HD");
     if (detailSheet && detailSheet.getLastRow() > 1) {
       var detailVals = detailSheet.getRange(2, 1, detailSheet.getLastRow() - 1, 11).getValues();
@@ -1272,8 +1274,13 @@ function doGet(e) {
         var dDate = String(dr[1] || "").trim();
         var dNurse = String(dr[5] || "").trim().toLowerCase();
         var dMachines = String(dr[7] || "").split(/[,;\\s]+/).filter(Boolean);
+        var dDuty = dr[9] ? String(dr[9]).trim() : "";
         if (dDate && dNurse) {
-          machineMap[dDate + "_" + dNurse] = dMachines;
+          var key = dDate + "_" + dNurse;
+          machineMap[key] = dMachines;
+          if (dDuty) {
+            dutyMap[key] = dDuty;
+          }
         }
       }
     }
@@ -1396,7 +1403,9 @@ function doGet(e) {
           }
 
           var dateStr = defaultYear + "-" + ("0" + defaultMonth).slice(-2) + "-" + ("0" + dInfo.day).slice(-2);
-          var mList = machineMap[dateStr + "_" + nurseName.toLowerCase()] || [];
+          var key = dateStr + "_" + nurseName.toLowerCase();
+          var mList = machineMap[key] || [];
+          var sDuty = dutyMap[key] || null;
 
           assignments.push({
             id: "asg-" + dateStr + "-" + nurseId,
@@ -1408,6 +1417,7 @@ function doGet(e) {
             isLeader: isLeader,
             machines: mList,
             machineCount: mList.length,
+            specialDuty: sDuty,
             notes: (cellCode !== "P" && cellCode !== "S" && cellCode !== "L" && cellCode !== "C" && cellCode !== "SK") ? cellCode : ""
           });
         }

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useHemo } from '../context/HemoContext';
-import { ShiftAssignment, ShiftType, SHIFT_TYPE_INFO, NURSE_ROLE_INFO, Nurse } from '../types';
+import { ShiftAssignment, ShiftType, SHIFT_TYPE_INFO, NURSE_ROLE_INFO, Nurse, parseSpecialDuties } from '../types';
 import { GoogleSheetsService } from '../domain/GoogleSheetsService';
 import { RegenerateMachineAllocationModal } from '../components/RegenerateMachineAllocationModal';
 import { ImportScheduleModal } from '../components/ImportScheduleModal';
@@ -8,6 +8,7 @@ import { EditAssignmentModal } from '../components/EditAssignmentModal';
 import { SpecialDutyModal } from '../components/SpecialDutyModal';
 import { SpecialDutyBadge } from '../components/SpecialDutyBadge';
 import { ReadOnlyBanner } from '../components/ReadOnlyBanner';
+import { getSpecialDutyDotStyle, SPECIAL_DUTY_DOT_LEGENDS } from '../utils/specialDutyColors';
 import {
   ChevronLeft,
   ChevronRight,
@@ -708,10 +709,25 @@ export const MonthlyScheduleScreen: React.FC = () => {
 
                       const shiftInfo = SHIFT_TYPE_INFO[shift];
                       const fullAsg = assignmentDetailMap.get(key);
-                      const activeDuty = fullAsg?.specialDuty || null;
+                      const isWorkShift = shift === 'PAGI' || shift === 'SIANG';
+                      const rawDuty = fullAsg?.specialDuty || (isWorkShift ? nurse.specialDuty : null);
+                      const parsedDuties = rawDuty ? parseSpecialDuties(rawDuty) : [];
+                      const dutiesToRender = [...parsedDuties];
+
+                      // Flag PJ Shif (isLeader === true on that shift)
+                      const hasLeaderDuty = dutiesToRender.some(
+                        (d) =>
+                          d.toUpperCase().includes('PJ') ||
+                          d.toUpperCase().includes('KATIM') ||
+                          d.toUpperCase().includes('LEADER')
+                      );
+                      if (isWorkShift && fullAsg?.isLeader && !hasLeaderDuty) {
+                        dutiesToRender.unshift('PJ Sif');
+                      }
+
                       const hasMachines = Boolean(fullAsg?.assignedMachineIds && fullAsg.assignedMachineIds.length > 0);
 
-                      let cellBg = 'hover:bg-slate-100';
+                      let cellBg = 'hover:bg-slate-100 dark:hover:bg-slate-800';
                       let cellText = 'text-slate-400';
 
                       if (shift === 'PAGI') {
@@ -752,7 +768,9 @@ export const MonthlyScheduleScreen: React.FC = () => {
                               ? 'bg-rose-50/20 dark:bg-rose-950/20 border-r border-slate-100/60 dark:border-slate-800/60'
                               : 'border-r border-slate-100/60 dark:border-slate-800/60'
                           }`}
-                          title={`${nurse.name} | ${day.dateString}${day.isToday ? ' [HARI AKTIF REAL TIME]' : ''}: ${shiftInfo?.label}${activeDuty ? ` | Tugas: ${activeDuty}` : ''}${hasMachines ? ` | Mesin: ${fullAsg?.assignedMachineIds.join(', ')}` : ''}${
+                          title={`${nurse.name} | ${day.dateString}${day.isToday ? ' [HARI AKTIF REAL TIME]' : ''}: ${shiftInfo?.label}${
+                            dutiesToRender.length > 0 ? ` | Tugas: ${dutiesToRender.join(', ')}` : ''
+                          }${hasMachines ? ` | Mesin: ${fullAsg?.assignedMachineIds.join(', ')}` : ''}${
                             isAdmin ? ' (Klik: P -> S -> L -> C -> SKT)' : ' (Mode Hanya Lihat)'
                           }`}
                         >
@@ -765,12 +783,31 @@ export const MonthlyScheduleScreen: React.FC = () => {
                           >
                             {shiftInfo?.code}
 
-                            {/* Indicator for Special Duty */}
-                            {activeDuty && (
+                            {/* Indicator for Special Duty with Distinct Colors */}
+                            {dutiesToRender.length === 1 && (
                               <span
-                                className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-1 ring-white bg-amber-500"
-                                title={`Tugas Khusus: ${activeDuty}`}
+                                className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ${
+                                  getSpecialDutyDotStyle(dutiesToRender[0]).ringClass
+                                } ${getSpecialDutyDotStyle(dutiesToRender[0]).bgClass}`}
+                                title={`Tugas Khusus: ${dutiesToRender[0]}`}
                               />
+                            )}
+                            {dutiesToRender.length > 1 && (
+                              <div
+                                className="absolute -top-1.5 -right-1.5 flex items-center -space-x-1 z-10 pointer-events-none"
+                                title={`Tugas Khusus: ${dutiesToRender.join(', ')}`}
+                              >
+                                {dutiesToRender.slice(0, 3).map((d, idx) => {
+                                  const style = getSpecialDutyDotStyle(d);
+                                  return (
+                                    <span
+                                      key={idx}
+                                      className={`w-2.5 h-2.5 rounded-full ${style.ringClass} ${style.bgClass}`}
+                                      title={`Tugas: ${d}`}
+                                    />
+                                  );
+                                })}
+                              </div>
                             )}
                           </div>
                         </td>
@@ -930,50 +967,68 @@ export const MonthlyScheduleScreen: React.FC = () => {
       </div>
 
       {/* Legend & Quick Guidelines */}
-      <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="font-semibold text-slate-700">Keterangan:</span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-5 h-5 rounded-md bg-sky-500 text-white font-bold flex items-center justify-center text-[10px]">
-              P
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-xs border border-slate-200 dark:border-slate-800 space-y-3 text-xs">
+        {/* Row 1: Sif & Status */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="font-bold text-slate-800 dark:text-slate-100">Kode Sif:</span>
+            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
+              <span className="w-5 h-5 rounded-md bg-sky-500 text-white font-bold flex items-center justify-center text-[10px]">
+                P
+              </span>
+              Sif Pagi (07.00-14.00)
             </span>
-            Sif Pagi (07.00-14.00)
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-5 h-5 rounded-md bg-amber-500 text-white font-bold flex items-center justify-center text-[10px]">
-              S
+            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
+              <span className="w-5 h-5 rounded-md bg-amber-500 text-white font-bold flex items-center justify-center text-[10px]">
+                S
+              </span>
+              Sif Siang (12.00-19.00)
             </span>
-            Sif Siang (12.00-19.00)
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-5 h-5 rounded-md bg-slate-300 text-slate-700 font-bold flex items-center justify-center text-[10px]">
-              L
+            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
+              <span className="w-5 h-5 rounded-md bg-slate-300 text-slate-700 font-bold flex items-center justify-center text-[10px]">
+                L
+              </span>
+              Libur / Off
             </span>
-            Libur / Off
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-5 h-5 rounded-md bg-teal-500 text-white font-bold flex items-center justify-center text-[10px]">
-              C
+            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
+              <span className="w-5 h-5 rounded-md bg-teal-500 text-white font-bold flex items-center justify-center text-[10px]">
+                C
+              </span>
+              Cuti Tahunan
             </span>
-            Cuti Tahunan
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-5 h-5 rounded-md bg-rose-500 text-white font-bold flex items-center justify-center text-[10px]">
-              Skt
+            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
+              <span className="w-5 h-5 rounded-md bg-rose-500 text-white font-bold flex items-center justify-center text-[10px]">
+                Skt
+              </span>
+              Sakit / Izin
             </span>
-            Sakit / Izin
-          </span>
-          <span className="inline-flex items-center gap-1.5 pl-2 border-l border-slate-200 text-teal-800 dark:text-teal-300">
-            <span className="w-2.5 h-2.5 rounded-full bg-teal-400 ring-1 ring-teal-500" />
-            <span>Dot = Ada Tugas Khusus / PIC</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5 pl-2 border-l border-slate-200 dark:border-slate-700 text-sky-800 dark:text-sky-300 font-bold">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 ring-2 ring-sky-300 animate-pulse" />
-            <span>Kolom Lineout Biru & KINI = Hari Aktif (Real Time)</span>
-          </span>
+            <span className="inline-flex items-center gap-1.5 pl-2 border-l border-slate-200 dark:border-slate-700 text-sky-800 dark:text-sky-300 font-bold">
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-500 ring-2 ring-sky-300 animate-pulse" />
+              <span>Kolom Garis Biru = Hari Ini (Real Time)</span>
+            </span>
+          </div>
+          <div className="text-slate-500 dark:text-slate-400 font-medium">
+            Standar HD: Rasio 1 Perawat : 2-3 Mesin Aktif
+          </div>
         </div>
-        <div className="text-slate-500">
-          Standar HD: Rasio 1 Perawat : 2-3 Mesin Aktif
+
+        {/* Row 2: Dot Warna Tugas Khusus (Diferensiasi Visual) */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 flex-wrap text-[11px]">
+          <span className="font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+            Warna Dot Tugas Khusus:
+          </span>
+          {SPECIAL_DUTY_DOT_LEGENDS.map((legend) => (
+            <span
+              key={legend.name}
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-[11px] font-semibold ${legend.borderClass} ${legend.textClass} bg-white dark:bg-slate-800/80 shadow-2xs`}
+              title={`${legend.label} ditandai dengan dot bulat ${legend.colorName}`}
+            >
+              <span className={`w-2.5 h-2.5 rounded-full ${legend.dotBg} ring-1 ring-white dark:ring-slate-900 shadow-2xs`} />
+              <span>
+                {legend.label} <span className="font-normal opacity-75">({legend.colorName})</span>
+              </span>
+            </span>
+          ))}
         </div>
       </div>
       </>

@@ -11,6 +11,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { SPECIAL_DUTY_OPTIONS, SpecialDutyInfo, parseSpecialDuties } from '../types';
+import { getSpecialDutyDotStyle } from '../utils/specialDutyColors';
 
 interface SpecialDutyBadgeProps {
   duty?: string | null;
@@ -70,12 +71,15 @@ const SingleBadge: React.FC<{
     md: 'w-3.5 h-3.5',
   };
 
+  const dotStyle = getSpecialDutyDotStyle(normalized);
+
   return (
     <div className={`inline-flex flex-col ${className}`}>
       <span
         title={description || label}
         className={`inline-flex items-center border shadow-2xs transition-all select-none ${badgeClass} ${sizeClasses[size]}`}
       >
+        <span className={`w-2 h-2 rounded-full shrink-0 ${dotStyle.bgClass} ring-1 ring-white/80`} />
         {renderDutyIcon(iconName, iconSizes[size])}
         <span className="truncate">{size === 'xs' ? shortName : label}</span>
       </span>

@@ -94,7 +94,8 @@ export const isPermanentAdminEmail = (rawEmail?: string | null): boolean => {
     clean === 'emhaprojectart@gmail.com' ||
     clean === 'emhaprojectart@gamil.com' ||
     clean === 'jumatlagipremium@gmail.com' ||
-    clean === 'muhammadhaikalmalilang@gmail.com'
+    clean === 'muhammadhaikalmalilang@gmail.com' ||
+    clean === 'emhaclothstore@gmail.com'
   );
 };
 

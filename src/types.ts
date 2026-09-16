@@ -26,6 +26,244 @@ export interface Nurse {
   isPermanent?: boolean; // Locked & permanently persisted
 }
 
+export interface SpecialDutyOption {
+  id: string; // Unique identifier or code
+  code: string; // Identifier used in assignments & profile
+  label: string; // Full readable name (e.g. "Tugas Khusus BHP (Bahan Habis Pakai)")
+  shortName: string; // Short badge label (e.g. "BHP")
+  description: string;
+  colorName: string; // 'Biru' | 'Merah' | 'Kuning' | 'Hijau' | 'Oranye' | 'Merah Tua' | 'Ungu' | 'Indigo' | 'Teal' | 'Sky' | 'Pink' | 'Lime'
+  dotColorHex: string; // Hex code for indicator dot
+  bgClass: string; // Tailwind background class for dot (e.g. "bg-blue-500")
+  badgeClass?: string;
+  textClass?: string;
+  borderClass?: string;
+  isCustom?: boolean;
+}
+
+export interface DutyColorPreset {
+  name: string;
+  dotColorHex: string;
+  bgClass: string;
+  borderClass: string;
+  badgeClass: string;
+  textClass: string;
+}
+
+export const DUTY_COLOR_PRESETS: DutyColorPreset[] = [
+  {
+    name: 'Biru',
+    dotColorHex: '#3b82f6',
+    bgClass: 'bg-blue-500',
+    borderClass: 'border-blue-300 dark:border-blue-700',
+    badgeClass: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/70 dark:text-blue-300 dark:border-blue-800',
+    textClass: 'text-blue-700 dark:text-blue-300',
+  },
+  {
+    name: 'Merah',
+    dotColorHex: '#f43f5e',
+    bgClass: 'bg-rose-500',
+    borderClass: 'border-rose-300 dark:border-rose-700',
+    badgeClass: 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800',
+    textClass: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    name: 'Kuning',
+    dotColorHex: '#fbbf24',
+    bgClass: 'bg-amber-400',
+    borderClass: 'border-amber-300 dark:border-amber-700',
+    badgeClass: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800',
+    textClass: 'text-amber-700 dark:text-amber-300',
+  },
+  {
+    name: 'Hijau',
+    dotColorHex: '#10b981',
+    bgClass: 'bg-emerald-500',
+    borderClass: 'border-emerald-300 dark:border-emerald-700',
+    badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800',
+    textClass: 'text-emerald-700 dark:text-emerald-300',
+  },
+  {
+    name: 'Oranye',
+    dotColorHex: '#f97316',
+    bgClass: 'bg-orange-500',
+    borderClass: 'border-orange-300 dark:border-orange-700',
+    badgeClass: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/70 dark:text-orange-300 dark:border-orange-800',
+    textClass: 'text-orange-700 dark:text-orange-300',
+  },
+  {
+    name: 'Merah Tua',
+    dotColorHex: '#dc2626',
+    bgClass: 'bg-red-600',
+    borderClass: 'border-red-300 dark:border-red-700',
+    badgeClass: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-950/70 dark:text-red-300 dark:border-red-800',
+    textClass: 'text-red-700 dark:text-red-300',
+  },
+  {
+    name: 'Ungu',
+    dotColorHex: '#9333ea',
+    bgClass: 'bg-purple-600',
+    borderClass: 'border-purple-300 dark:border-purple-700',
+    badgeClass: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/70 dark:text-purple-300 dark:border-purple-800',
+    textClass: 'text-purple-700 dark:text-purple-300',
+  },
+  {
+    name: 'Indigo',
+    dotColorHex: '#6366f1',
+    bgClass: 'bg-indigo-500',
+    borderClass: 'border-indigo-300 dark:border-indigo-700',
+    badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/70 dark:text-indigo-300 dark:border-indigo-800',
+    textClass: 'text-indigo-700 dark:text-indigo-300',
+  },
+  {
+    name: 'Teal',
+    dotColorHex: '#14b8a6',
+    bgClass: 'bg-teal-500',
+    borderClass: 'border-teal-300 dark:border-teal-700',
+    badgeClass: 'bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-950/70 dark:text-teal-300 dark:border-teal-800',
+    textClass: 'text-teal-700 dark:text-teal-300',
+  },
+  {
+    name: 'Sky',
+    dotColorHex: '#0284c7',
+    bgClass: 'bg-sky-500',
+    borderClass: 'border-sky-300 dark:border-sky-700',
+    badgeClass: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/70 dark:text-sky-300 dark:border-sky-800',
+    textClass: 'text-sky-700 dark:text-sky-300',
+  },
+  {
+    name: 'Pink',
+    dotColorHex: '#ec4899',
+    bgClass: 'bg-pink-500',
+    borderClass: 'border-pink-300 dark:border-pink-700',
+    badgeClass: 'bg-pink-100 text-pink-800 border-pink-300 dark:bg-pink-950/70 dark:text-pink-300 dark:border-pink-800',
+    textClass: 'text-pink-700 dark:text-pink-300',
+  },
+  {
+    name: 'Lime',
+    dotColorHex: '#84cc16',
+    bgClass: 'bg-lime-500',
+    borderClass: 'border-lime-300 dark:border-lime-700',
+    badgeClass: 'bg-lime-100 text-lime-800 border-lime-300 dark:bg-lime-950/70 dark:text-lime-300 dark:border-lime-800',
+    textClass: 'text-lime-700 dark:text-lime-300',
+  },
+];
+
+export const DEFAULT_SPECIAL_DUTY_OPTIONS: SpecialDutyOption[] = [
+  {
+    id: 'BHP',
+    code: 'BHP',
+    label: 'Tugas Khusus BHP (Bahan Habis Pakai)',
+    shortName: 'BHP',
+    description: 'Pengelolaan spuit, bloodline, AV fistula, dialyzer, heparin, kassa, & desinfektan mesin HD',
+    colorName: 'Biru',
+    dotColorHex: '#3b82f6',
+    bgClass: 'bg-blue-500',
+    badgeClass: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/70 dark:text-blue-300 dark:border-blue-800',
+    textClass: 'text-blue-700 dark:text-blue-300',
+    borderClass: 'border-blue-200 dark:border-blue-800',
+    isCustom: false,
+  },
+  {
+    id: 'FARMASI_LOGISTIK',
+    code: 'FARMASI & LOGISTIK',
+    label: 'Tugas Khusus Farmasi Logistik',
+    shortName: 'FARMASI',
+    description: 'Pengelolaan obat emergensi, EPO / Eritropoietin, zat besi IV, amprah farmasi & logistik umum ruangan',
+    colorName: 'Merah',
+    dotColorHex: '#f43f5e',
+    bgClass: 'bg-rose-500',
+    badgeClass: 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-300 dark:border-rose-800',
+    textClass: 'text-rose-700 dark:text-rose-300',
+    borderClass: 'border-rose-200 dark:border-rose-800',
+    isCustom: false,
+  },
+  {
+    id: 'NATRIUM_RO',
+    code: 'NATRIUM RO',
+    label: 'Tugas Khusus Natrium RO & Water Treatment',
+    shortName: 'NATRIUM RO',
+    description: 'Pemantauan Water Treatment RO, uji TDS & klorin, mixing konsentrat natrium bikarbonat harian',
+    colorName: 'Kuning',
+    dotColorHex: '#fbbf24',
+    bgClass: 'bg-amber-400',
+    badgeClass: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800',
+    textClass: 'text-amber-700 dark:text-amber-300',
+    borderClass: 'border-amber-200 dark:border-amber-800',
+    isCustom: false,
+  },
+  {
+    id: 'PJ_SHIF',
+    code: 'PJ SHIF',
+    label: 'Tugas Khusus PJ Shif (Katim / Leader)',
+    shortName: 'PJ SHIF',
+    description: 'Koordinator pelayanan perawat, memimpin operan dan koordinasi pelayanan sif HD',
+    colorName: 'Hijau',
+    dotColorHex: '#10b981',
+    bgClass: 'bg-emerald-500',
+    badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800',
+    textClass: 'text-emerald-700 dark:text-emerald-300',
+    borderClass: 'border-emerald-200 dark:border-emerald-800',
+    isCustom: false,
+  },
+  {
+    id: 'REUSE_DIALYZER',
+    code: 'REUSE DIALYZER',
+    label: 'Reuse Dialyzer (Reprocessing Tabung)',
+    shortName: 'REUSE',
+    description: 'Pencucian otomatis/manual, uji bundle volume, sterilisasi & penyimpanan dialyzer reuse',
+    colorName: 'Oranye',
+    dotColorHex: '#f97316',
+    bgClass: 'bg-orange-500',
+    badgeClass: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-950/70 dark:text-orange-300 dark:border-orange-800',
+    textClass: 'text-orange-700 dark:text-orange-300',
+    borderClass: 'border-orange-200 dark:border-orange-800',
+    isCustom: false,
+  },
+  {
+    id: 'CITO',
+    code: 'CITO',
+    label: 'CITO & Penanggung Jawab Isolasi',
+    shortName: 'CITO',
+    description: 'Penanganan tindakan HD darurat/cito serta penanggung jawab mutlak Alokasi Mesin Isolasi (C08 & C09)',
+    colorName: 'Merah Tua',
+    dotColorHex: '#dc2626',
+    bgClass: 'bg-red-600',
+    badgeClass: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-950/70 dark:text-red-300 dark:border-red-800',
+    textClass: 'text-red-700 dark:text-red-300',
+    borderClass: 'border-red-200 dark:border-red-800',
+    isCustom: false,
+  },
+  {
+    id: 'IPCN_PPI',
+    code: 'IPCN / PPI HD',
+    label: 'IPCN / PPI HD (Pencegahan Infeksi)',
+    shortName: 'IPCN / PPI',
+    description: 'Audit kepatuhan APD cuci tangan, surveillance flebitis/bakteremia, alur pembuangan limbah medis B3',
+    colorName: 'Ungu',
+    dotColorHex: '#9333ea',
+    bgClass: 'bg-purple-600',
+    badgeClass: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/70 dark:text-purple-300 dark:border-purple-800',
+    textClass: 'text-purple-700 dark:text-purple-300',
+    borderClass: 'border-purple-200 dark:border-purple-800',
+    isCustom: false,
+  },
+  {
+    id: 'BPJS',
+    code: 'KLAIM & DOKUMEN BPJS',
+    label: 'Klaim & Dokumen BPJS HD',
+    shortName: 'KLAIM BPJS',
+    description: 'Pengecekan resep HD, kelengkapan SEP, travel letter, audit berkas verifikasi klaim BPJS Kesehatan',
+    colorName: 'Indigo',
+    dotColorHex: '#6366f1',
+    bgClass: 'bg-indigo-500',
+    badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-950/70 dark:text-indigo-300 dark:border-indigo-800',
+    textClass: 'text-indigo-700 dark:text-indigo-300',
+    borderClass: 'border-indigo-200 dark:border-indigo-800',
+    isCustom: false,
+  },
+];
+
 export interface SpecialDutyInfo {
   code: string;
   label: string;

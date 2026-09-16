@@ -39,7 +39,7 @@ interface SpecialDutyModalProps {
   initialNurseId?: number;
 }
 
-// High-contrast color mapping for duty chips to ensure maximum readability
+// High-contrast color mapping for duty chips to ensure maximum readability and consistency with Monthly Schedule dots
 const DUTY_CHIP_STYLES: Record<
   string,
   {
@@ -47,49 +47,57 @@ const DUTY_CHIP_STYLES: Record<
     inactive: string;
     label: string;
     short: string;
+    dotBg: string;
   }
 > = {
-  CITO: {
-    active: 'bg-rose-600 text-white border-rose-700 font-black shadow-xs',
-    inactive: 'bg-white text-rose-900 border-rose-300 hover:bg-rose-50 font-extrabold',
-    label: 'CITO (HD Darurat & Isolasi)',
-    short: 'CITO',
-  },
   BHP: {
-    active: 'bg-emerald-600 text-white border-emerald-700 font-black shadow-xs',
-    inactive: 'bg-white text-emerald-900 border-emerald-300 hover:bg-emerald-50 font-extrabold',
-    label: 'BHP (Bahan Habis Pakai)',
-    short: 'BHP',
-  },
-  'NATRIUM RO': {
-    active: 'bg-cyan-700 text-white border-cyan-800 font-black shadow-xs',
-    inactive: 'bg-white text-cyan-900 border-cyan-300 hover:bg-cyan-50 font-extrabold',
-    label: 'NATRIUM RO (Water Treatment)',
-    short: 'NATRIUM RO',
-  },
-  'FARMASI & LOGISTIK': {
-    active: 'bg-purple-600 text-white border-purple-700 font-black shadow-xs',
-    inactive: 'bg-white text-purple-900 border-purple-300 hover:bg-purple-50 font-extrabold',
-    label: 'FARMASI & LOGISTIK',
-    short: 'FARMASI',
-  },
-  'REUSE DIALYZER': {
-    active: 'bg-amber-600 text-white border-amber-700 font-black shadow-xs',
-    inactive: 'bg-white text-amber-900 border-amber-300 hover:bg-amber-50 font-extrabold',
-    label: 'REUSE DIALYZER (Reprocessing)',
-    short: 'REUSE',
-  },
-  'IPCN / PPI HD': {
-    active: 'bg-red-700 text-white border-red-800 font-black shadow-xs',
-    inactive: 'bg-white text-red-900 border-red-300 hover:bg-red-50 font-extrabold',
-    label: 'IPCN / PPI HD (Pencegahan Infeksi)',
-    short: 'IPCN / PPI',
-  },
-  'KLAIM & DOKUMEN BPJS': {
     active: 'bg-blue-600 text-white border-blue-700 font-black shadow-xs',
     inactive: 'bg-white text-blue-900 border-blue-300 hover:bg-blue-50 font-extrabold',
+    label: 'BHP (Bahan Habis Pakai)',
+    short: 'BHP',
+    dotBg: 'bg-blue-500',
+  },
+  'FARMASI & LOGISTIK': {
+    active: 'bg-rose-600 text-white border-rose-700 font-black shadow-xs',
+    inactive: 'bg-white text-rose-900 border-rose-300 hover:bg-rose-50 font-extrabold',
+    label: 'FARMASI & LOGISTIK',
+    short: 'FARMASI',
+    dotBg: 'bg-rose-500',
+  },
+  'NATRIUM RO': {
+    active: 'bg-amber-500 text-slate-950 border-amber-600 font-black shadow-xs',
+    inactive: 'bg-white text-amber-900 border-amber-300 hover:bg-amber-50 font-extrabold',
+    label: 'NATRIUM RO (Water Treatment)',
+    short: 'NATRIUM RO',
+    dotBg: 'bg-amber-400',
+  },
+  'REUSE DIALYZER': {
+    active: 'bg-orange-500 text-white border-orange-600 font-black shadow-xs',
+    inactive: 'bg-white text-orange-900 border-orange-300 hover:bg-orange-50 font-extrabold',
+    label: 'REUSE DIALYZER (Reprocessing)',
+    short: 'REUSE',
+    dotBg: 'bg-orange-500',
+  },
+  CITO: {
+    active: 'bg-red-700 text-white border-red-800 font-black shadow-xs',
+    inactive: 'bg-white text-red-900 border-red-300 hover:bg-red-50 font-extrabold',
+    label: 'CITO (HD Darurat & Isolasi)',
+    short: 'CITO',
+    dotBg: 'bg-red-600',
+  },
+  'IPCN / PPI HD': {
+    active: 'bg-purple-600 text-white border-purple-700 font-black shadow-xs',
+    inactive: 'bg-white text-purple-900 border-purple-300 hover:bg-purple-50 font-extrabold',
+    label: 'IPCN / PPI HD (Pencegahan Infeksi)',
+    short: 'IPCN / PPI',
+    dotBg: 'bg-purple-600',
+  },
+  'KLAIM & DOKUMEN BPJS': {
+    active: 'bg-indigo-600 text-white border-indigo-700 font-black shadow-xs',
+    inactive: 'bg-white text-indigo-900 border-indigo-300 hover:bg-indigo-50 font-extrabold',
     label: 'KLAIM & DOKUMEN BPJS',
     short: 'KLAIM BPJS',
+    dotBg: 'bg-indigo-500',
   },
 };
 
@@ -583,11 +591,12 @@ export const SpecialDutyModal: React.FC<SpecialDutyModalProps> = ({
                 onClick={() => handleAssignDailyDuty(nurse, activeDuty, !isLeader)}
                 className={`px-2.5 py-1.5 rounded-xl text-xs font-black border-2 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer ${
                   isLeader
-                    ? 'bg-amber-500 border-amber-600 text-slate-950 shadow-xs'
-                    : 'bg-white hover:bg-amber-50 border-slate-300 text-slate-800'
+                    ? 'bg-emerald-600 border-emerald-700 text-white shadow-xs'
+                    : 'bg-white hover:bg-emerald-50 border-slate-300 text-slate-800'
                 }`}
-                title="Tandai perawat ini sebagai Penanggung Jawab Sif (Katim) pada tanggal ini"
+                title="Tandai perawat ini sebagai Penanggung Jawab Sif (Katim / Dot Hijau) pada tanggal ini"
               >
+                <span className={`w-2 h-2 rounded-full bg-emerald-500 ring-1 ${isLeader ? 'ring-white' : 'ring-slate-300'}`} />
                 <Crown className="w-3.5 h-3.5" />
                 <span>{isLeader ? 'PJ Sif Aktif' : 'Pilih PJ Sif'}</span>
               </button>
@@ -602,11 +611,12 @@ export const SpecialDutyModal: React.FC<SpecialDutyModalProps> = ({
                   type="button"
                   id={`btn-duty-${nurse.id}-${style.short}`}
                   onClick={() => handleToggleDailyDuty(nurse, code)}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs border-2 transition-all flex items-center gap-1 active:scale-95 cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-xl text-xs border-2 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer ${
                     isSelected ? style.active : style.inactive
                   }`}
                   title={`${style.label}: Klik untuk ${isSelected ? 'membatalkan' : 'menugaskan'} PIC ini pada ${selectedTargetDate}`}
                 >
+                  <span className={`w-2 h-2 rounded-full ${style.dotBg} ring-1 ${isSelected ? 'ring-white' : 'ring-slate-300'}`} />
                   {isSelected && <Check className="w-3.5 h-3.5 stroke-[3] text-white" />}
                   <span>{style.short}</span>
                 </button>
